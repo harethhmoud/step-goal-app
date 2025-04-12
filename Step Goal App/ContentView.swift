@@ -6,45 +6,95 @@ struct ContentView: View {
     @State private var stepGoalString: String = ""
     @State private var mapCenter: CLLocationCoordinate2D?
     @State private var circleRadius: Double = 0
-    @State private var showLocationError: Bool = false // New state for location error alert
+    @State private var showLocationError: Bool = false
 
     private let averageMetersPerStep: Double = 0.75
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Input Section
-            HStack {
-                Text("Total Steps Goal:")
-                    .padding(.leading)
-                TextField("e.g., 5000", text: $stepGoalString)
-                    .keyboardType(.numberPad)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding(.horizontal)
-                Button("Show Radius") {
-                    calculateAndShowRadius()
-                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                }
-                .padding(.trailing)
-                .buttonStyle(.borderedProminent)
-            }
-            .padding(.vertical)
+        ZStack {
+            // Background color for the entire view
+            Color(.systemBackground)
+                .ignoresSafeArea()
 
-            // Map Section
-            MapView(centerCoordinate: $mapCenter, radius: $circleRadius)
-                .ignoresSafeArea(.container, edges: .bottom)
+            VStack(spacing: 0) {
+                // Input Section (Card-like design)
+                VStack(spacing: 16) {
+                    Text("Set Your Step Goal")
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .foregroundColor(.primary)
+
+                    HStack {
+                        Image(systemName: "figure.walk")
+                            .foregroundColor(.gray)
+                            .font(.system(size: 20))
+                        
+                        TextField("Enter steps (e.g., 5000)", text: $stepGoalString)
+                            .keyboardType(.numberPad)
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                            )
+                    }
+
+                    Button(action: {
+                        calculateAndShowRadius()
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }) {
+                        Text("Show Radius")
+                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color.blue, Color.purple]),
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 3)
+                    }
+                }
+                .padding()
+                .background(
+                    Color(.systemBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+                )
+                .padding(.horizontal)
+                .padding(.top, 20)
+
+                // Map Section
+                if mapCenter == nil {
+                    ProgressView("Fetching your location...")
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                        .foregroundColor(.gray)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color(.systemGray6))
+                } else {
+                    MapView(centerCoordinate: $mapCenter, radius: $circleRadius)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        )
+                        .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
+                        .padding(.horizontal)
+                        .padding(.bottom, 20)
+                        .ignoresSafeArea(.container, edges: .bottom)
+                }
+            }
         }
         .onAppear {
             locationManager.requestAuthorization()
             locationManager.startUpdatingLocation()
-            // Set a default location for testing if none exists
-            if locationManager.lastKnownLocation == nil {
-                let defaultLocation = CLLocation(latitude: 45.499895, longitude: -73.575582) // 1200 Maisonneuve
-                locationManager.lastKnownLocation = defaultLocation
-                mapCenter = defaultLocation.coordinate
-            }
         }
         .onChange(of: locationManager.lastKnownLocation) { newValue in
-            if let location = newValue, mapCenter == nil || circleRadius == 0 {
+            if let location = newValue {
                 mapCenter = location.coordinate
             }
         }
@@ -68,7 +118,7 @@ struct ContentView: View {
         }
 
         guard let currentLocation = locationManager.lastKnownLocation else {
-            showLocationError = true // Show alert if location is nil
+            showLocationError = true
             return
         }
 

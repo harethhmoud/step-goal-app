@@ -11,28 +11,24 @@ struct MapView: UIViewRepresentable {
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
         mapView.delegate = context.coordinator
-        mapView.showsUserLocation = true // Keep the blue dot for reference
+        mapView.showsUserLocation = true
         return mapView
     }
 
     func updateUIView(_ uiView: MKMapView, context: Context) {
-        // Clear previous overlays and annotations
         uiView.removeOverlays(uiView.overlays)
         uiView.removeAnnotations(uiView.annotations)
 
         if let coordinate = centerCoordinate {
-            // Add a pin (annotation) at the user's location
             let annotation = MKPointAnnotation()
             annotation.coordinate = coordinate
             annotation.title = "You Are Here"
             uiView.addAnnotation(annotation)
 
-            // Add the radius circle if radius > 0
             if radius > 0 {
                 let circle = MKCircle(center: coordinate, radius: radius)
                 uiView.addOverlay(circle)
 
-                // Set the map region to show the user and the circle
                 let regionRadius = radius * 1.5
                 let region = MKCoordinateRegion(
                     center: coordinate,
@@ -43,7 +39,6 @@ struct MapView: UIViewRepresentable {
                     uiView.setRegion(region, animated: true)
                 }
             } else {
-                // If no radius, just center on the user
                 let initialRegion = MKCoordinateRegion(
                     center: coordinate,
                     span: MKCoordinateSpan(latitudeDelta: mapRegionSpanDegrees, longitudeDelta: mapRegionSpanDegrees)
@@ -64,21 +59,18 @@ struct MapView: UIViewRepresentable {
             self.parent = parent
         }
 
-        // Style the circle overlay
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
             if let circleOverlay = overlay as? MKCircle {
                 let renderer = MKCircleRenderer(circle: circleOverlay)
-                renderer.fillColor = UIColor.blue.withAlphaComponent(0.2)
-                renderer.strokeColor = UIColor.blue
-                renderer.lineWidth = 1
+                renderer.fillColor = UIColor.systemPurple.withAlphaComponent(0.3)
+                renderer.strokeColor = UIColor.systemPurple
+                renderer.lineWidth = 2
                 return renderer
             }
             return MKOverlayRenderer(overlay: overlay)
         }
 
-        // Optional: Customize the annotation view (pin)
         func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-            // Don't customize the user location dot (blue dot)
             if annotation is MKUserLocation {
                 return nil
             }
@@ -88,7 +80,8 @@ struct MapView: UIViewRepresentable {
 
             if annotationView == nil {
                 annotationView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: identifier)
-                annotationView?.canShowCallout = true // Show the "You Are Here" title in a callout
+                (annotationView as? MKPinAnnotationView)?.pinTintColor = .systemPurple
+                annotationView?.canShowCallout = true
             } else {
                 annotationView?.annotation = annotation
             }

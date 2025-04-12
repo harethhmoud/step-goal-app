@@ -25,13 +25,19 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         } else {
             requestAuthorization()
         }
+        #if targetEnvironment(simulator)
+        // Simulate the Montreal location for testing
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            let simulatedLocation = CLLocation(latitude: 45.499895, longitude: -73.575582)
+            self.lastKnownLocation = simulatedLocation
+            print("Simulated location set: \(simulatedLocation.coordinate.latitude), \(simulatedLocation.coordinate.longitude)")
+        }
+        #endif
     }
 
     func stopUpdatingLocation() {
         manager.stopUpdatingLocation()
     }
-
-    // MARK: - CLLocationManagerDelegate Methods
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         authorizationStatus = manager.authorizationStatus
