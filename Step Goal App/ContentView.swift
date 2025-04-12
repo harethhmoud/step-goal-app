@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var stepGoalString: String = ""
     @State private var mapCenter: CLLocationCoordinate2D?
     @State private var circleRadius: Double = 0
+    @State private var showLocationError: Bool = false // New state for location error alert
 
     private let averageMetersPerStep: Double = 0.75
 
@@ -35,6 +36,12 @@ struct ContentView: View {
         .onAppear {
             locationManager.requestAuthorization()
             locationManager.startUpdatingLocation()
+            // Set a default location for testing if none exists
+            if locationManager.lastKnownLocation == nil {
+                let defaultLocation = CLLocation(latitude: 45.499895, longitude: -73.575582) // 1200 Maisonneuve
+                locationManager.lastKnownLocation = defaultLocation
+                mapCenter = defaultLocation.coordinate
+            }
         }
         .onChange(of: locationManager.lastKnownLocation) { newValue in
             if let location = newValue, mapCenter == nil || circleRadius == 0 {
@@ -46,6 +53,11 @@ struct ContentView: View {
         } message: {
             Text("Location access is required to center the map and calculate the radius. Please enable location services for this app in Settings.")
         }
+        .alert("Location Error", isPresented: $showLocationError) {
+            Button("OK") {}
+        } message: {
+            Text("Unable to get your current location. Please ensure location services are enabled.")
+        }
     }
 
     func calculateAndShowRadius() {
@@ -56,7 +68,7 @@ struct ContentView: View {
         }
 
         guard let currentLocation = locationManager.lastKnownLocation else {
-            print("Current location not available yet.")
+            showLocationError = true // Show alert if location is nil
             return
         }
 

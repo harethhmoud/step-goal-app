@@ -1,20 +1,13 @@
-//
-//  LocationManager.swift
-//  Step Goal App
-//
-//  Created by Hareth Hmoud on 2025-04-12.
-// Focuses on managing location logic
-
 import Foundation
 import SwiftUI
-import MapKit // For map views and coordinates
-import CoreLocation // For user location
+import MapKit
+import CoreLocation
 
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
-    private let manager = CLLocationManager() // class to access location services
+    private let manager = CLLocationManager()
     @Published var lastKnownLocation: CLLocation?
     @Published var authorizationStatus: CLAuthorizationStatus?
-    @Published var locationError: Error? = nil
+    @Published var locationError: Error?
 
     override init() {
         super.init()
@@ -23,15 +16,14 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     func requestAuthorization() {
-        manager.requestWhenInUseAuthorization() // brings up the request location auth popup
+        manager.requestWhenInUseAuthorization()
     }
 
     func startUpdatingLocation() {
-         // Only start if authorized
         if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways {
             manager.startUpdatingLocation()
         } else {
-            requestAuthorization() // Ask again if not authorized yet
+            requestAuthorization()
         }
     }
 
@@ -39,27 +31,25 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         manager.stopUpdatingLocation()
     }
 
-    // --- CLLocationManagerDelegate Methods ---
+    // MARK: - CLLocationManagerDelegate Methods
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         authorizationStatus = manager.authorizationStatus
+        print("Authorization status changed: \(String(describing: authorizationStatus))")
         if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways {
-            // Start updating location immediately if authorized
             manager.startUpdatingLocation()
-        } //else if authorizationStatus == .denied || authorizationStatus == .restricted {
-            // No else if needed here - ContentView will react to the status change
-            //print("Location access denied or restricted.")
-        //}
+        }
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if let location = locations.first {
+            print("Location updated: \(location.coordinate.latitude), \(location.coordinate.longitude)")
             lastKnownLocation = location
-        } // Get the most recent location
+        }
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("Failed to get user location: \(error.localizedDescription)")
-        // Handle error appropriately (e.g., show alert)
+        locationError = error
     }
 }
